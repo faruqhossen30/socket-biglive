@@ -1,0 +1,486 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model agoras {
+  id              BigInt    @id @default(autoincrement())
+  app_id          String    @db.VarChar(255)
+  app_certificate String    @db.VarChar(255)
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime? @db.Timestamp(0)
+}
+
+model avatar_frames {
+  id         BigInt    @id @default(autoincrement())
+  name       String?   @db.VarChar(255)
+  diamond    Int
+  img        String    @db.VarChar(255)
+  status     Boolean
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model cache {
+  key        String @id @db.VarChar(255)
+  value      String
+  expiration Int
+}
+
+model cache_locks {
+  key        String @id @db.VarChar(255)
+  owner      String @db.VarChar(255)
+  expiration Int
+}
+
+model categories {
+  id         BigInt    @id @default(autoincrement())
+  name       String    @db.VarChar(255)
+  img        String?   @db.VarChar(255)
+  status     Boolean   @default(true)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model deposits {
+  id                             BigInt    @id @default(autoincrement())
+  user_id                        BigInt
+  admin_id                       BigInt
+  diamond                        Int
+  created_at                     DateTime? @db.Timestamp(0)
+  updated_at                     DateTime? @db.Timestamp(0)
+  users_deposits_admin_idTousers users     @relation("deposits_admin_idTousers", fields: [admin_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "deposits_admin_id_foreign")
+  users_deposits_user_idTousers  users     @relation("deposits_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "deposits_user_id_foreign")
+}
+
+model failed_jobs {
+  id         BigInt   @id @default(autoincrement())
+  uuid       String   @unique(map: "failed_jobs_uuid_unique") @db.VarChar(255)
+  connection String
+  queue      String
+  payload    String
+  exception  String
+  failed_at  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model gift_transactions {
+  id                                         BigInt    @id @default(autoincrement())
+  sender_id                                  BigInt
+  receiver_id                                BigInt
+  diamond                                    Int
+  commission                                 Int
+  created_at                                 DateTime? @db.Timestamp(0)
+  updated_at                                 DateTime? @db.Timestamp(0)
+  users_gift_transactions_receiver_idTousers users     @relation("gift_transactions_receiver_idTousers", fields: [receiver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "gift_transactions_receiver_id_foreign")
+  users_gift_transactions_sender_idTousers   users     @relation("gift_transactions_sender_idTousers", fields: [sender_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "gift_transactions_sender_id_foreign")
+}
+
+model gifts {
+  id          BigInt    @id @default(autoincrement())
+  category_id BigInt?
+  name        String?   @db.VarChar(255)
+  diamond     Int
+  commission  Int
+  total       Int
+  img         String    @db.VarChar(255)
+  music       String?   @db.VarChar(255)
+  status      Boolean
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+}
+
+model job_batches {
+  id             String  @id @db.VarChar(255)
+  name           String  @db.VarChar(255)
+  total_jobs     Int
+  pending_jobs   Int
+  failed_jobs    Int
+  failed_job_ids String
+  options        String?
+  cancelled_at   Int?
+  created_at     Int
+  finished_at    Int?
+}
+
+model jobs {
+  id           BigInt @id @default(autoincrement())
+  queue        String @db.VarChar(255)
+  payload      String
+  attempts     Int    @db.SmallInt
+  reserved_at  Int?
+  available_at Int
+  created_at   Int
+
+  @@index([queue], map: "jobs_queue_index")
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement())
+  migration String @db.VarChar(255)
+  batch     Int
+}
+
+model model_has_permissions {
+  permission_id BigInt
+  model_type    String      @db.VarChar(255)
+  model_id      BigInt
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "model_has_permissions_permission_id_foreign")
+
+  @@id([permission_id, model_id, model_type])
+  @@index([model_id, model_type], map: "model_has_permissions_model_id_model_type_index")
+}
+
+model model_has_roles {
+  role_id    BigInt
+  model_type String @db.VarChar(255)
+  model_id   BigInt
+  roles      roles  @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "model_has_roles_role_id_foreign")
+
+  @@id([role_id, model_id, model_type])
+  @@index([model_id, model_type], map: "model_has_roles_model_id_model_type_index")
+}
+
+model password_reset_tokens {
+  email      String    @id @db.VarChar(255)
+  token      String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+}
+
+model permissions {
+  id                    BigInt                  @id @default(autoincrement())
+  name                  String                  @db.VarChar(255)
+  guard_name            String                  @db.VarChar(255)
+  module_name           String                  @db.VarChar(255)
+  created_at            DateTime?               @db.Timestamp(0)
+  updated_at            DateTime?               @db.Timestamp(0)
+  model_has_permissions model_has_permissions[]
+  role_has_permissions  role_has_permissions[]
+
+  @@unique([name, guard_name], map: "permissions_name_guard_name_unique")
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement())
+  tokenable_type String    @db.VarChar(255)
+  tokenable_id   BigInt
+  name           String
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?
+  last_used_at   DateTime? @db.Timestamp(0)
+  expires_at     DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([expires_at], map: "personal_access_tokens_expires_at_index")
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model role_has_permissions {
+  permission_id BigInt
+  role_id       BigInt
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "role_has_permissions_permission_id_foreign")
+  roles         roles       @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "role_has_permissions_role_id_foreign")
+
+  @@id([permission_id, role_id])
+}
+
+model roles {
+  id                   BigInt                 @id @default(autoincrement())
+  name                 String                 @db.VarChar(255)
+  guard_name           String                 @db.VarChar(255)
+  created_at           DateTime?              @db.Timestamp(0)
+  updated_at           DateTime?              @db.Timestamp(0)
+  model_has_roles      model_has_roles[]
+  role_has_permissions role_has_permissions[]
+
+  @@unique([name, guard_name], map: "roles_name_guard_name_unique")
+}
+
+model sessions {
+  id            String  @id @db.VarChar(255)
+  user_id       BigInt?
+  ip_address    String? @db.VarChar(45)
+  user_agent    String?
+  payload       String
+  last_activity Int
+
+  @@index([last_activity], map: "sessions_last_activity_index")
+  @@index([user_id], map: "sessions_user_id_index")
+}
+
+model sliders {
+  id         BigInt    @id @default(autoincrement())
+  img        String    @db.VarChar(255)
+  status     Boolean
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model users {
+  id                                                     BigInt                 @id @default(autoincrement())
+  name                                                   String                 @db.VarChar(255)
+  email                                                  String                 @unique(map: "users_email_unique") @db.VarChar(255)
+  email_verified_at                                      DateTime?              @db.Timestamp(0)
+  password                                               String?                @db.VarChar(255)
+  secret                                                 String?                @db.VarChar(255)
+  photo_url                                              String?                @db.VarChar(255)
+  google_id                                              String?                @db.VarChar(255)
+  diamond                                                Int                    @default(0)
+  reseller_diamond                                       Int                    @default(0)
+  transaction                                            Int                    @default(0)
+  is_host                                                Boolean                @default(false)
+  is_agent                                               Boolean                @default(false)
+  is_admin                                               Boolean                @default(false)
+  is_reseller                                            Boolean                @default(false)
+  device_id                                              String?                @db.VarChar(255)
+  model_name                                             String?                @db.VarChar(255)
+  fcm_token                                              String?                @db.VarChar(255)
+  cover_photo                                            String?                @db.VarChar(255)
+  gender                                                 String?                @db.VarChar(255)
+  date_Of_Birth                                          DateTime?              @db.Date
+  address                                                String?                @db.VarChar(255)
+  bio                                                    String?                @db.VarChar(255)
+  country                                                String?                @db.VarChar(255)
+  flag                                                   String?                @db.VarChar(255)
+  device_block                                           Boolean                @default(false)
+  status                                                 Boolean                @default(true)
+  remember_token                                         String?                @db.VarChar(100)
+  created_at                                             DateTime?              @db.Timestamp(0)
+  updated_at                                             DateTime?              @db.Timestamp(0)
+  admin_histories                                        admin_histories[]
+  audio_live_histories                                   audio_live_histories[]
+  blocks_blocks_target_user_idTousers                    blocks[]               @relation("blocks_target_user_idTousers")
+  blocks_blocks_user_idTousers                           blocks[]               @relation("blocks_user_idTousers")
+  buy_royals                                             buy_royals[]
+  buy_vvips                                              buy_vvips[]
+  coin_bags                                              coin_bags[]
+  deposits_deposits_admin_idTousers                      deposits[]             @relation("deposits_admin_idTousers")
+  deposits_deposits_user_idTousers                       deposits[]             @relation("deposits_user_idTousers")
+  device_blocks_device_blocks_admin_idTousers            device_blocks[]        @relation("device_blocks_admin_idTousers")
+  device_blocks_device_blocks_user_idTousers             device_blocks?         @relation("device_blocks_user_idTousers")
+  followings_followings_target_user_idTousers            followings[]           @relation("followings_target_user_idTousers")
+  followings_followings_user_idTousers                   followings[]           @relation("followings_user_idTousers")
+  follows_follows_target_user_idTousers                  follows[]              @relation("follows_target_user_idTousers")
+  follows_follows_user_idTousers                         follows[]              @relation("follows_user_idTousers")
+  gift_transactions_gift_transactions_receiver_idTousers gift_transactions[]    @relation("gift_transactions_receiver_idTousers")
+  gift_transactions_gift_transactions_sender_idTousers   gift_transactions[]    @relation("gift_transactions_sender_idTousers")
+  hosts_hosts_agent_idTousers                            hosts[]                @relation("hosts_agent_idTousers")
+  hosts_hosts_user_idTousers                             hosts?                 @relation("hosts_user_idTousers")
+  reseller_deposits_reseller_deposits_admin_idTousers    reseller_deposits[]    @relation("reseller_deposits_admin_idTousers")
+  reseller_deposits_reseller_deposits_reseller_idTousers reseller_deposits[]    @relation("reseller_deposits_reseller_idTousers")
+  rewards                                                rewards[]
+  royal_packages                                         royal_packages[]
+  video_live_histories                                   video_live_histories[]
+  video_lives                                            video_lives?
+  vvip_packages                                          vvip_packages[]
+}
+
+model video_lives {
+  id           BigInt    @id @default(autoincrement())
+  user_id      BigInt    @unique(map: "video_lives_user_id_unique")
+  app_id       String    @db.VarChar(255)
+  channel      String    @db.VarChar(255)
+  is_host      Boolean
+  is_audience  Boolean
+  request      Boolean
+  join         Boolean
+  microphone   Boolean
+  speaker      Boolean
+  camera       Boolean
+  gift_diamond Int
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+  users        users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "video_lives_user_id_foreign")
+}
+
+model admin_histories {
+  id         BigInt    @id @default(autoincrement())
+  admin_id   BigInt
+  title      String    @db.VarChar(255)
+  type       String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  users      users     @relation(fields: [admin_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "admin_histories_admin_id_foreign")
+}
+
+model audio_live_histories {
+  id         BigInt    @id @default(autoincrement())
+  user_id    BigInt
+  start_at   DateTime  @db.Timestamp(0)
+  end_at     DateTime  @db.Timestamp(0)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "audio_live_histories_user_id_foreign")
+}
+
+model blocks {
+  id                                 BigInt    @id @default(autoincrement())
+  user_id                            BigInt
+  target_user_id                     BigInt
+  created_at                         DateTime? @db.Timestamp(0)
+  updated_at                         DateTime? @db.Timestamp(0)
+  users_blocks_target_user_idTousers users     @relation("blocks_target_user_idTousers", fields: [target_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "blocks_target_user_id_foreign")
+  users_blocks_user_idTousers        users     @relation("blocks_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "blocks_user_id_foreign")
+
+  @@unique([user_id, target_user_id], map: "blocks_user_id_target_user_id_unique")
+}
+
+model buy_royals {
+  id             BigInt    @id @default(autoincrement())
+  user_id        BigInt
+  diamond        Int
+  duration_month Int
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+  users          users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "buy_royals_user_id_foreign")
+}
+
+model buy_vvips {
+  id             BigInt    @id @default(autoincrement())
+  user_id        BigInt
+  diamond        Int
+  duration_month Int
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+  users          users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "buy_vvips_user_id_foreign")
+}
+
+model coin_bags {
+  id         BigInt    @id @default(autoincrement())
+  admin_id   BigInt
+  diamond    Int
+  member     Int
+  status     Boolean
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  users      users     @relation(fields: [admin_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "coin_bags_admin_id_foreign")
+}
+
+model device_blocks {
+  id                                  BigInt    @id @default(autoincrement())
+  user_id                             BigInt    @unique(map: "device_blocks_user_id_unique")
+  device_id                           String    @db.VarChar(255)
+  model_name                          String?   @db.VarChar(255)
+  admin_id                            BigInt
+  created_at                          DateTime? @db.Timestamp(0)
+  updated_at                          DateTime? @db.Timestamp(0)
+  users_device_blocks_admin_idTousers users     @relation("device_blocks_admin_idTousers", fields: [admin_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "device_blocks_admin_id_foreign")
+  users_device_blocks_user_idTousers  users     @relation("device_blocks_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "device_blocks_user_id_foreign")
+}
+
+model entry_frames {
+  id         BigInt    @id @default(autoincrement())
+  name       String    @db.VarChar(255)
+  diamond    Int
+  img        String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+}
+
+model followings {
+  id                                     BigInt    @id @default(autoincrement())
+  user_id                                BigInt
+  target_user_id                         BigInt
+  created_at                             DateTime? @db.Timestamp(0)
+  updated_at                             DateTime? @db.Timestamp(0)
+  users_followings_target_user_idTousers users     @relation("followings_target_user_idTousers", fields: [target_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "followings_target_user_id_foreign")
+  users_followings_user_idTousers        users     @relation("followings_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "followings_user_id_foreign")
+
+  @@unique([user_id, target_user_id], map: "followings_user_id_target_user_id_unique")
+}
+
+model follows {
+  id                                  BigInt    @id @default(autoincrement())
+  user_id                             BigInt
+  target_user_id                      BigInt
+  created_at                          DateTime? @db.Timestamp(0)
+  updated_at                          DateTime? @db.Timestamp(0)
+  users_follows_target_user_idTousers users     @relation("follows_target_user_idTousers", fields: [target_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "follows_target_user_id_foreign")
+  users_follows_user_idTousers        users     @relation("follows_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "follows_user_id_foreign")
+
+  @@unique([user_id, target_user_id], map: "follows_user_id_target_user_id_unique")
+}
+
+model hosts {
+  id                          BigInt    @id @default(autoincrement())
+  user_id                     BigInt    @unique(map: "hosts_user_id_unique")
+  agent_id                    BigInt
+  audio_host                  Boolean
+  video_host                  Boolean
+  pending                     Boolean   @default(true)
+  status                      Boolean   @default(false)
+  created_at                  DateTime? @db.Timestamp(0)
+  updated_at                  DateTime? @db.Timestamp(0)
+  users_hosts_agent_idTousers users     @relation("hosts_agent_idTousers", fields: [agent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "hosts_agent_id_foreign")
+  users_hosts_user_idTousers  users     @relation("hosts_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "hosts_user_id_foreign")
+}
+
+model notifications {
+  id              String    @id @db.Uuid
+  type            String    @db.VarChar(255)
+  notifiable_type String    @db.VarChar(255)
+  notifiable_id   BigInt
+  data            String
+  read_at         DateTime? @db.Timestamp(0)
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime? @db.Timestamp(0)
+
+  @@index([notifiable_type, notifiable_id], map: "notifications_notifiable_type_notifiable_id_index")
+}
+
+model reseller_deposits {
+  id                                         BigInt    @id @default(autoincrement())
+  admin_id                                   BigInt
+  reseller_id                                BigInt
+  diamond                                    Int
+  created_at                                 DateTime? @db.Timestamp(0)
+  updated_at                                 DateTime? @db.Timestamp(0)
+  users_reseller_deposits_admin_idTousers    users     @relation("reseller_deposits_admin_idTousers", fields: [admin_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reseller_deposits_admin_id_foreign")
+  users_reseller_deposits_reseller_idTousers users     @relation("reseller_deposits_reseller_idTousers", fields: [reseller_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "reseller_deposits_reseller_id_foreign")
+}
+
+model rewards {
+  id         BigInt    @id @default(autoincrement())
+  user_id    BigInt
+  diamond    Int
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "rewards_user_id_foreign")
+}
+
+model royal_packages {
+  id             BigInt    @id @default(autoincrement())
+  diamond        Int
+  duration_month Int
+  status         Boolean
+  admin_id       BigInt
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+  users          users     @relation(fields: [admin_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "royal_packages_admin_id_foreign")
+}
+
+model video_live_histories {
+  id         BigInt    @id @default(autoincrement())
+  user_id    BigInt
+  start_at   DateTime  @db.Timestamp(0)
+  end_at     DateTime  @db.Timestamp(0)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "video_live_histories_user_id_foreign")
+}
+
+model vvip_packages {
+  id             BigInt    @id @default(autoincrement())
+  diamond        Int
+  duration_month Int
+  status         Boolean
+  admin_id       BigInt
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+  users          users     @relation(fields: [admin_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "vvip_packages_admin_id_foreign")
+}
