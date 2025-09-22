@@ -350,3 +350,64 @@ exports.speakerOff = async (req, res) => {
     res.status(400).json({ status: "error", message: error.message });
   }
 };
+
+
+exports.hostDelete = async (req, res) => {
+  try {
+    const deletedRecord = await prisma.video_lives.delete({
+      where: { user_id: req.user.id },
+      // select: {
+      //   id: true,
+      //   channel: true,
+      //   is_host: true,
+      //   camera: true,
+      //   microphone: true,
+      //   speaker: true,
+      //   join: true,
+      //   gift_diamond: true,
+      //   users: {
+      //     select: {
+      //       id: true,
+      //       name: true,
+      //       photo_url: true,
+      //     },
+      //   },
+      // },
+    });
+
+    if (deletedRecord) {
+      // await AudienceEmitService.audienceDeleted(
+      //   deletedRecord.channel,
+      //   deletedRecord.users
+      // );
+      // if (deletedRecord.join) {
+      //   await EmitService.sendBroadcastAudienceList(deletedRecord.channel);
+      //   await EmitService.broadcastRemoved(deletedRecord.channel, deletedRecord);
+      // }
+const nowUtc = new Date(new Date().toUTCString());
+
+      await prisma.video_live_histories.create({
+        data: {
+          user_id: req.user.id,
+          start_at: deletedRecord.created_at,
+          end_at: new Date(nowUtc.getTime() + 6 * 60 * 60 * 1000)
+        }});
+    }
+
+    return res.json({
+      message: "Record deleted successfully",
+      user: deletedRecord.users,
+    });
+  } catch (err) {
+    // Handle Prisma error when record not found
+    // console.log(err);
+
+    if (err.code === "P2025") {
+      return res.status(404).json({ message: "Record not found" });
+    }
+
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: err.message });
+  }
+};

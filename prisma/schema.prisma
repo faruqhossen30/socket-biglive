@@ -470,7 +470,7 @@ model video_live_histories {
   start_at   DateTime  @db.Timestamp(0)
   end_at     DateTime  @db.Timestamp(0)
   created_at DateTime? @db.Timestamp(0)
-  updated_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestampz(0)
   users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "video_live_histories_user_id_foreign")
 }
 

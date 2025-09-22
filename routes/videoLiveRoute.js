@@ -36,5 +36,7 @@ router.get("/host/microphone-on",apiAuthMiddleware,videoLiveHostController.micro
 router.get("/host/microphone-off",apiAuthMiddleware,videoLiveHostController.microphoneOff);
 router.get("/host/speaker-on",apiAuthMiddleware,videoLiveHostController.speakerOn);
 router.get("/host/speaker-off",apiAuthMiddleware,videoLiveHostController.speakerOff);
+router.delete("/host/delete",apiAuthMiddleware,videoLiveHostController.hostDelete);
+
 
 module.exports = router;
