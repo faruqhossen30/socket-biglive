@@ -119,6 +119,53 @@ exports.removeFromJoined = async (req, res) => {
   }
 };
 
+exports.kickFromLive = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deletedRecord = await prisma.video_lives.delete({
+      where: { user_id: id, channel: req.user.id.toString()},
+      include: {
+        users: {
+          select: {
+            id: true,
+            name: true,
+            photo_url: true,
+            transaction: true,
+            is_vvip: true,
+            is_royal: true,
+          },
+        },
+      },
+    });
+
+    const payLoad = {
+      id: Number(deletedRecord.users.id),
+      name: deletedRecord.users.name,
+      transaction: Number(deletedRecord.users.transaction),
+      vvip: deletedRecord.users.is_vvip,
+      royal: deletedRecord.users.is_royal,
+      text: `Host kick to ${deletedRecord.users.name} from live`,
+    };
+
+    await EmitService.kickFromLive(deletedRecord.channel, payLoad);
+
+    if (deletedRecord) {
+      if (deletedRecord.join) {
+        await EmitService.sendBroadcastAudienceList(deletedRecord.channel);
+      }
+    }
+
+    return res.json({
+      message: "Record deleted successfully",
+      user: deletedRecord.users,
+    });
+  } catch (error) {
+    console.log(error);
+    
+    res.status(400).json({ status: "error", message: error.message });
+  }
+};
+
 exports.cameraOn = async (req, res) => {
   try {
     const record = await prisma.video_lives.update({
@@ -351,7 +398,6 @@ exports.speakerOff = async (req, res) => {
   }
 };
 
-
 exports.hostDelete = async (req, res) => {
   try {
     const deletedRecord = await prisma.video_lives.delete({
@@ -384,14 +430,15 @@ exports.hostDelete = async (req, res) => {
       //   await EmitService.sendBroadcastAudienceList(deletedRecord.channel);
       //   await EmitService.broadcastRemoved(deletedRecord.channel, deletedRecord);
       // }
-const nowUtc = new Date(new Date().toUTCString());
+      const nowUtc = new Date(new Date().toUTCString());
 
       await prisma.video_live_histories.create({
         data: {
           user_id: req.user.id,
           start_at: deletedRecord.created_at,
-          end_at: new Date(nowUtc.getTime() + 6 * 60 * 60 * 1000)
-        }});
+          end_at: new Date(nowUtc.getTime() + 6 * 60 * 60 * 1000),
+        },
+      });
     }
 
     return res.json({

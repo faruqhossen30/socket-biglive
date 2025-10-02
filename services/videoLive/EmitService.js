@@ -44,7 +44,7 @@ class EmitService {
     hostSocket.to(String(channel)).emit("broadcastUpdated", payload);
   };
 
-    /**
+  /**
    * Broadcast remove
    * Host remove joined user
    */
@@ -52,7 +52,11 @@ class EmitService {
     hostSocket.to(String(channel)).emit("broadcastRemoved", payload);
   };
 
-
+  kickFromLive = async (channel, payload) => {
+    console.log("kickFromLive emit", payload);
+    const channelName = String(channel);
+    hostSocket.to(channelName).emit("kickFromLive", payload);
+  };
 
   sendHostBrardcast = async (channel) => {
     const host = await QueryService.getHost(channel);

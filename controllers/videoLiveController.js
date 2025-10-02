@@ -32,7 +32,13 @@ exports.sendGift = async (req, res) => {
       const [user, receiver, gift] = await Promise.all([
         tx.users.findUnique({
           where: { id: req.user.id },
-          select: { id: true, diamond: true, name: true },
+          select: {
+            id: true,
+            diamond: true,
+            name: true,
+            is_host: true,
+            lock_diamond: true,
+          },
         }),
         tx.users.findUnique({
           where: { id: parseInt(receiverId) },
@@ -62,6 +68,24 @@ exports.sendGift = async (req, res) => {
       }
 
       // Check if sender has sufficient diamonds
+      if (user.is_host || user.lock_diamond) {
+        if (user.is_host) {
+          return res.status(422).json({
+            status: "error",
+            message:
+              "Host cant't send diamond ",
+          });
+        }
+        if (user.lock_diamond) {
+          return res.status(422).json({
+            status: "error",
+            message:
+              "Your diamond lock",
+          });
+        }
+      }
+
+      // Check if sender has sufficient diamonds
       if (user.diamond < gift.diamond) {
         throw new Error("Insufficient diamonds");
       }
@@ -72,16 +96,21 @@ exports.sendGift = async (req, res) => {
           tx.users.update({
             where: { id: req.user.id },
             data: { diamond: { decrement: gift.diamond } },
-            select: { id: true,name: true ,diamond: true },
+            select: { id: true, name: true, diamond: true },
           }),
           tx.users.update({
             where: { id: parseInt(receiverId) },
             data: { diamond: { increment: gift.diamond - gift.commission } },
-            select: { id: true,name:true, diamond: true },
+            select: { id: true, name: true, diamond: true },
           }),
           tx.video_lives.update({
             where: { user_id: parseInt(channel), is_host: true },
-            data: { gift_diamond: { increment: parseInt(receiverId) == parseInt(channel) ? gift.diamond : 0 } },
+            data: {
+              gift_diamond: {
+                increment:
+                  parseInt(receiverId) == parseInt(channel) ? gift.diamond : 0,
+              },
+            },
             // select: { id: true },
           }),
           tx.gift_transactions.create({
@@ -111,11 +140,10 @@ exports.sendGift = async (req, res) => {
       img: result.gift.img,
       music: result.gift.music,
       gift_diamond: result.host.gift_diamond,
-      title: `${result.user.name} sent  ${result.gift.diamond} gift to ${result.receiver.name}`
+      title: `${result.user.name} sent  ${result.gift.diamond} gift to ${result.receiver.name}`,
     };
 
     await EmitService.giftSend(channel, payload);
-
 
     res.json({
       status: "ok",

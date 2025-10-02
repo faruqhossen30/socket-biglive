@@ -381,6 +381,8 @@ exports.delete = async (req, res) => {
       },
     });
 
+    console.log('delete record');
+    
     if (deletedRecord) {
       await AudienceEmitService.audienceDeleted(
         deletedRecord.channel,

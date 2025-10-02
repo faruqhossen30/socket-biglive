@@ -11,7 +11,7 @@ console.log(`Setting up socket namespace: ${NAMESPACE}`);
 
 // Socket.io auth middleware to prevent server crash on invalid/expired token
 hostSocket.use((socket, next) => {
-  try {
+  try {    
     const token = socket.handshake.query && socket.handshake.query.jwt;
     if (!token) {
       console.log("No JWT token provided for socket:", socket.id);
@@ -35,7 +35,7 @@ hostSocket.use((socket, next) => {
     }
 
     socket.user = decoded.user || decoded;
-    socket.isHost = socket.handshake.query.isHost ?? false;
+    socket.isHost = JSON.parse(socket.handshake.query.isHost) ?? false;
     next();
   } catch (e) {
     console.log("Unexpected auth middleware error:", e && e.message);
@@ -50,12 +50,26 @@ hostSocket.on("connection", (socket) => {
 
   // Join room using roomId as room name
   socket.join(roomId);
+  
+  // Send chat event after initial connection to room
+  const connectionPayload = {
+    id: socket.user && socket.user.id,
+    name: socket.user && socket.user.name,
+    transaction: socket.user && socket.user.transaction,
+    vvip: false,
+    royal: false,
+    text: `${socket.user && socket.user.name || 'User'} connected to the room`,
+    isJoinMessage: true
+  };
+  
+  console.log('Auto chat emit after initial connection to roomid = ', roomId);
+  hostSocket.to(roomId).emit("chat", connectionPayload);
+  
   // Start socket event
 
   // Add chat event handler with more detailed logging
   socket.on("chat", (data) => {
     // Broadcast the chat message to all users in the room
-    // console.log("chat", data);
     const payLoad = {
       id: socket.user && socket.user.id,
       name: socket.user && socket.user.name,
@@ -64,7 +78,12 @@ hostSocket.on("connection", (socket) => {
       royal: data.royal,
       text: data.text,
     };
-    hostSocket.to(roomId).emit("chat", payLoad);
+    
+    // Use the room specified in data, or fallback to the original roomId
+    const targetRoom = data.roomId || roomId;
+    console.log('chat emit to roomid = ', targetRoom);
+    
+    hostSocket.to(targetRoom).emit("chat", payLoad);
   });
 
   // User scroll for leave
@@ -72,7 +91,7 @@ hostSocket.on("connection", (socket) => {
     const roomName = String(room);
     socket.leave(roomName);
     console.log(`${socket.id} left room: ${room}`);
-    //   io.to(room).emit("message", `User ${socket.id} left ${room}`);
+    // io.to(room).emit("message", `User ${socket.id} left ${room}`);
   });
 
   // User scroll for join
@@ -80,8 +99,20 @@ hostSocket.on("connection", (socket) => {
     const roomName = String(room);
     socket.join(roomName);
     console.log(`${socket.id} join room: ${room}`);
-
-    //   io.to(room).emit("message", `User ${socket.id} left ${room}`);
+    
+    // Send chat event after joining room
+    const joinPayload = {
+      id: socket.user && socket.user.id,
+      name: socket.user && socket.user.name,
+      transaction: socket.user && socket.user.transaction,
+      vvip: false,
+      royal: false,
+      text: `${socket.user && socket.user.name || 'User'} joined the room`,
+      isJoinMessage: true
+    };
+    
+    console.log('Auto chat emit after join to roomid = ', roomName);
+    hostSocket.to(roomName).emit("chat", joinPayload);
   });
 
   socket.on("disconnect", async () => {

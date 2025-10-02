@@ -29,6 +29,7 @@ router.delete("/audience/delete",apiAuthMiddleware,videoLiveAudienceController.d
 router.get("/host/:id/join-accept",apiAuthMiddleware,videoLiveHostController.acceptJoinRequest); // :id - user_id
 router.get("/host/:id/join-reject",apiAuthMiddleware,videoLiveHostController.rejectJoinRequest);
 router.get("/host/:id/remove-from-joined",apiAuthMiddleware,videoLiveHostController.removeFromJoined);
+router.get("/host/:id/kick-from-live",apiAuthMiddleware,videoLiveHostController.kickFromLive);
 // host camera, microphone, speaker
 router.get("/host/camera-on",apiAuthMiddleware,videoLiveHostController.cameraOn);
 router.get("/host/camera-off",apiAuthMiddleware,videoLiveHostController.cameraOff);
