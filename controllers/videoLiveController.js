@@ -26,69 +26,80 @@ exports.sendGift = async (req, res) => {
   }
 
   try {
+    // First, fetch sender, receiver, and gift data to validate before transaction
+    const [user, receiver, gift] = await Promise.all([
+      prisma.users.findUnique({
+        where: { id: req.user.id },
+        select: {
+          id: true,
+          diamond: true,
+          name: true,
+          is_host: true,
+          lock_diamond: true,
+        },
+      }),
+      prisma.users.findUnique({
+        where: { id: parseInt(receiverId) },
+        select: { id: true, name: true, status: true },
+      }),
+      prisma.gifts.findUnique({
+        where: { id: parseInt(giftId) },
+        select: {
+          id: true,
+          diamond: true,
+          img: true,
+          music: true,
+          commission: true,
+        },
+      }),
+    ]);
+
+    // Validate all required data exists
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "User not found",
+      });
+    }
+    if (!receiver) {
+      return res.status(404).json({
+        status: "error",
+        message: "Receiver not found",
+      });
+    }
+    if (!gift) {
+      return res.status(404).json({
+        status: "error",
+        message: "Gift not found",
+      });
+    }
+
+    // Check if sender is host
+    if (user.is_host) {
+      return res.status(422).json({
+        status: "error",
+        message: "Host can't send diamond",
+      });
+    }
+
+    // Check if sender has locked diamonds
+    if (user.lock_diamond) {
+      return res.status(422).json({
+        status: "error",
+        message: "Your diamond lock",
+      });
+    }
+
+    // Check if sender has sufficient diamonds
+    if (user.diamond < gift.diamond) {
+      return res.status(400).json({
+        status: "error",
+        message: "Insufficient diamonds",
+      });
+    }
+
     // Use a single transaction for all database operations
     const result = await prisma.$transaction(async (tx) => {
-      // Fetch sender, receiver, and gift data in parallel within transaction
-      const [user, receiver, gift] = await Promise.all([
-        tx.users.findUnique({
-          where: { id: req.user.id },
-          select: {
-            id: true,
-            diamond: true,
-            name: true,
-            is_host: true,
-            lock_diamond: true,
-          },
-        }),
-        tx.users.findUnique({
-          where: { id: parseInt(receiverId) },
-          select: { id: true, name: true, status: true },
-        }),
-        tx.gifts.findUnique({
-          where: { id: parseInt(giftId) },
-          select: {
-            id: true,
-            diamond: true,
-            img: true,
-            music: true,
-            commission: true,
-          },
-        }),
-      ]);
-
-      // Validate all required data exists
-      if (!user) {
-        throw new Error("User not found");
-      }
-      if (!receiver) {
-        throw new Error("Receiver not found");
-      }
-      if (!gift) {
-        throw new Error("Gift not found");
-      }
-
-      // Check if sender has sufficient diamonds
-      if (user.is_host || user.lock_diamond) {
-        if (user.is_host) {
-          return res.status(422).json({
-            status: "error",
-            message:
-              "Host cant't send diamond ",
-          });
-        }
-        if (user.lock_diamond) {
-          return res.status(422).json({
-            status: "error",
-            message:
-              "Your diamond lock",
-          });
-        }
-      }
-
-      // Check if sender has sufficient diamonds
-      if (user.diamond < gift.diamond) {
-        throw new Error("Insufficient diamonds");
-      }
 
       // Update sender and receiver diamonds, and create transaction record
       const [updatedSender, updatedReceiver, host, giftTransaction] =
@@ -111,7 +122,6 @@ exports.sendGift = async (req, res) => {
                   parseInt(receiverId) == parseInt(channel) ? gift.diamond : 0,
               },
             },
-            // select: { id: true },
           }),
           tx.gift_transactions.create({
             data: {
@@ -134,7 +144,11 @@ exports.sendGift = async (req, res) => {
       };
     });
 
-    console.log("result.host", result.host);
+    console.log("result user = ", result.user);
+    console.log("result receiver = ", result.receiver);
+    console.log("result gift = ", result.gift);
+    console.log("result host = ", result.host);
+    console.log("result giftTransaction = ", result.giftTransaction);
 
     const payload = {
       img: result.gift.img,
@@ -151,32 +165,6 @@ exports.sendGift = async (req, res) => {
     });
   } catch (error) {
     console.error("Error sending gift:", error);
-
-    // Handle specific error types
-    if (error.message === "User not found") {
-      return res.status(404).json({
-        status: "error",
-        message: "User not found",
-      });
-    }
-    if (error.message === "Receiver not found") {
-      return res.status(404).json({
-        status: "error",
-        message: "Receiver not found",
-      });
-    }
-    if (error.message === "Gift not found") {
-      return res.status(404).json({
-        status: "error",
-        message: "Gift not found",
-      });
-    }
-    if (error.message === "Insufficient diamonds") {
-      return res.status(400).json({
-        status: "error",
-        message: "Insufficient diamonds",
-      });
-    }
 
     res.status(500).json({
       status: "error",
