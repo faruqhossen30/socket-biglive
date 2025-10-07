@@ -52,6 +52,9 @@ exports.audienceCreate = async (req, res) => {
           id: true,
           photo_url: true,
           transaction: true,
+          is_vvip: true,
+          is_royal: true,
+          avatar_frame: true,
         },
       }),
     ]);
@@ -149,6 +152,10 @@ exports.cameraOn = async (req, res) => {
             id: true,
             name: true,
             photo_url: true,
+            transaction: true,
+            is_vvip: true,
+            is_royal: true,
+            avatar_frame: true,
           },
         },
       },
@@ -188,6 +195,10 @@ exports.cameraOff = async (req, res) => {
             id: true,
             name: true,
             photo_url: true,
+            transaction: true,
+            is_vvip: true,
+            is_royal: true,
+            avatar_frame: true,
           },
         },
       },
@@ -205,6 +216,8 @@ exports.cameraOff = async (req, res) => {
 };
 
 exports.microphoneOn = async (req, res) => {
+  console.log('microphone on');
+  
   try {
     const record = await prisma.video_lives.update({
       where: {
@@ -227,6 +240,10 @@ exports.microphoneOn = async (req, res) => {
             id: true,
             name: true,
             photo_url: true,
+            transaction: true,
+            is_vvip: true,
+            is_royal: true,
+            avatar_frame: true,
           },
         },
       },
@@ -234,6 +251,8 @@ exports.microphoneOn = async (req, res) => {
     await EmitService.broadcastUpdated(req.user.id.toString(), record);
     res.json({ status: "ok", data: record });
   } catch (error) {
+    console.log(error);
+    
     if (error.code === "P2025") {
       return res
         .status(404)
@@ -266,6 +285,10 @@ exports.microphoneOff = async (req, res) => {
             id: true,
             name: true,
             photo_url: true,
+            transaction: true,
+            is_vvip: true,
+            is_royal: true,
+            avatar_frame: true,
           },
         },
       },
@@ -305,6 +328,10 @@ exports.speakerOn = async (req, res) => {
             id: true,
             name: true,
             photo_url: true,
+            transaction: true,
+            is_vvip: true,
+            is_royal: true,
+            avatar_frame: true,
           },
         },
       },
@@ -343,11 +370,81 @@ exports.speakerOff = async (req, res) => {
             id: true,
             name: true,
             photo_url: true,
+            transaction: true,
+            is_vvip: true,
+            is_royal: true,
+            avatar_frame: true,
           },
         },
       },
     });
     res.json({ status: "ok", data: record });
+  } catch (error) {
+    if (error.code === "P2025") {
+      return res
+        .status(404)
+        .json({ status: "error", message: "Record not found" });
+    }
+    res.status(400).json({ status: "error", message: error.message });
+  }
+};
+
+exports.leaveFromJoined = async (req, res) => {
+  try {
+    const checkJoin = await prisma.video_lives.findUnique({
+      where: {
+        user_id: req.user.id,
+        is_host: false,
+        join: true,
+      },
+    });
+
+    if (!checkJoin) {
+      return res
+        .status(422)
+        .json({ status: "error", message: "You are not joined" });
+    }
+
+    const record = await prisma.video_lives.update({
+      where: {
+        user_id: req.user.id,
+        is_host: false,
+      },
+      data: {
+        microphone: false,
+        speaker: false,
+        camera: false,
+        request: false,
+        join: false,
+      },
+      select: {
+        id: true,
+        channel: true,
+        is_host: true,
+        camera: true,
+        microphone: true,
+        speaker: true,
+        gift_diamond: true,
+        users: {
+          select: {
+            id: true,
+            name: true,
+            photo_url: true,
+            transaction: true,
+            is_vvip: true,
+            is_royal: true,
+            avatar_frame: true,
+          },
+        },
+      },
+    });
+    console.log("i remove from joined", record);
+
+    if (record) {
+      await EmitService.broadcastRemoved(record.channel, record);
+    }
+
+    res.json({ status: "ok", message: "Leave from joined" });
   } catch (error) {
     if (error.code === "P2025") {
       return res
@@ -376,21 +473,27 @@ exports.delete = async (req, res) => {
             id: true,
             name: true,
             photo_url: true,
+            transaction: true,
+            is_vvip: true,
+            is_royal: true,
+            avatar_frame: true,
           },
         },
       },
     });
 
-    console.log('delete record');
-    
+    console.log("delete record");
+
     if (deletedRecord) {
       await AudienceEmitService.audienceDeleted(
         deletedRecord.channel,
         deletedRecord.users
       );
       if (deletedRecord.join) {
-        await EmitService.sendBroadcastAudienceList(deletedRecord.channel);
-        await EmitService.broadcastRemoved(deletedRecord.channel, deletedRecord);
+        await EmitService.broadcastRemoved(
+          deletedRecord.channel,
+          deletedRecord
+        );
       }
 
       console.log(deletedRecord);

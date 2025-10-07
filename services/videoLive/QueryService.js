@@ -34,6 +34,10 @@ class QueryService {
             id: true,
             name: true,
             photo_url: true,
+            transaction: true,
+            is_vvip: true,
+            is_royal: true,
+            avatar_frame: true
           },
         },
       },
@@ -54,6 +58,10 @@ class QueryService {
             id: true,
             name: true,
             photo_url: true,
+            transaction: true,
+            is_vvip: true,
+            is_royal: true,
+            avatar_frame: true
           },
         },
       },

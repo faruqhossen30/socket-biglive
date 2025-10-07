@@ -144,12 +144,6 @@ exports.sendGift = async (req, res) => {
       };
     });
 
-    console.log("result user = ", result.user);
-    console.log("result receiver = ", result.receiver);
-    console.log("result gift = ", result.gift);
-    console.log("result host = ", result.host);
-    console.log("result giftTransaction = ", result.giftTransaction);
-
     const payload = {
       img: result.gift.img,
       music: result.gift.music,

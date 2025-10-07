@@ -23,6 +23,7 @@ router.get("/audience/microphone-on",apiAuthMiddleware,videoLiveAudienceControll
 router.get("/audience/microphone-off",apiAuthMiddleware,videoLiveAudienceController.microphoneOff);
 router.get("/audience/camera-on",apiAuthMiddleware,videoLiveAudienceController.cameraOn);
 router.get("/audience/camera-off",apiAuthMiddleware,videoLiveAudienceController.cameraOff);
+router.get("/audience/leave-from-joined",apiAuthMiddleware,videoLiveAudienceController.leaveFromJoined);
 router.delete("/audience/delete",apiAuthMiddleware,videoLiveAudienceController.delete);
 
 // Host
