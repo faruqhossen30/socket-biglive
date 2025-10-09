@@ -6,13 +6,21 @@ const router = express.Router();
 const jwt = require("jsonwebtoken");
 require("./socket/hostSocket");
 require("./utils/json-bigint");
+
+const { redisClient, radisURL } = require('./config/redis');
+// Initialize Greedy Game
+console.log('🎮 Initializing Greedy Game...');
+const { greedyGame } = require('./games/greedyGame');
+
 // Router
 const videoLiveRoute = require("./routes/videoLiveRoute");
+const greedyGameRoute = require("./routes/greedyGameRoute");
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use("/", router);
 app.use("/api/video-live", videoLiveRoute);
+app.use("/api/greedy", greedyGameRoute);
 
 // jwt
 router.post("/jwt", (req, res) => {
@@ -47,7 +55,10 @@ app.get("/api", (req, res) => {
   res.send("Hello World!");
 });
 
-server.listen(port, () => {
+server.listen(port, async () => {
   console.log(`Listening on port ${port}`);
   console.log("Socket.io server is running");
+  await redisClient.connect(radisURL).then(() => {
+    console.log("redis connect");
+  });
 });
