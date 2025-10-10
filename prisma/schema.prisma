@@ -527,3 +527,24 @@ model profile_updates {
   updated_at DateTime? @db.Timestamp(0)
   users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "profile_updates_user_id_foreign")
 }
+
+model teen_patti_rounds {
+  id            BigInt    @id @default(autoincrement())
+  round         Int
+  win_option_id Int?
+  created_at    DateTime? @db.Timestamp(0)
+  updated_at    DateTime? @db.Timestamp(0)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model teen_pattis {
+  id             BigInt    @id @default(autoincrement())
+  round          Int
+  option_id      Int
+  diamond        Int
+  return_diamond Int
+  status         String    @default("pending") @db.VarChar(255)
+  completed      Boolean   @default(false)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+}

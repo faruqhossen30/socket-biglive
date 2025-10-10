@@ -1,5 +1,6 @@
 const { redisClient } = require("../../../config/redis");
 const { GameStatusEnum } = require("../../../enums/gameStatusEnum");
+const { PrismaClient } = require("../../../generated/prisma");
 const prisma = new PrismaClient();
 
 /**

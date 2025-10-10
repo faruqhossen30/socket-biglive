@@ -9,8 +9,8 @@ require("./utils/json-bigint");
 
 const { redisClient, radisURL } = require('./config/redis');
 // Initialize Greedy Game
-console.log('🎮 Initializing Greedy Game...');
-const { greedyGame } = require('./games/greedyGame');
+// console.log('🎮 Initializing Greedy Game...');
+// const { greedyGame } = require('./games/greedyGame');
 
 // Router
 const videoLiveRoute = require("./routes/videoLiveRoute");
