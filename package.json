@@ -25,8 +25,5 @@
   },
   "devDependencies": {
     "prisma": "^6.15.0"
-  },
-  "bin": {
-    "express-cli": "./cli/cli.js"
   }
 }

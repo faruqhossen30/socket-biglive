@@ -23,6 +23,7 @@ class GreedyGame {
     this.countdown = COUNTDOWN_TIME;
     this.gameState = GAME_STATES.WAITING;
     this.winningOption = 0;
+    this.lastCalculation = null; // persists details from performRoundCalculation
     this.countdownInterval = null;
     this.calculationTimeout = null;
     this.isInitialized = false;
@@ -100,6 +101,7 @@ class GreedyGame {
       this.countdown = COUNTDOWN_TIME;
       this.gameState = GAME_STATES.COUNTDOWN;
       this.winningOption = 0;
+      this.lastCalculation = null;
 
       // Update Redis data for new round using service
       await this.service.updateRedisRound(this.currentRound);
@@ -107,7 +109,7 @@ class GreedyGame {
       await this.service.updateRedisGameState(this.gameState);
       await this.service.updateRedisWinningOption("null");
 
-      console.log(`🔄 Starting Round ${this.currentRound}`);
+      console.log(`🔄 Greedy Starting Round ${this.currentRound}`);
 
       // Broadcast new round
       greedy.emit("round_started", {
@@ -136,7 +138,7 @@ class GreedyGame {
       this.countdown--;
 
       console.log(
-        `⏱️ Countdown: ${this.countdown}s - Round ${this.currentRound}`
+        `⏱️ greedy Countdown: ${this.countdown}s - Round ${this.currentRound}`
       );
 
       // Update Redis using service
@@ -180,25 +182,28 @@ class GreedyGame {
       this.gameState = GAME_STATES.CALCULATING;
       await this.service.updateRedisGameState(this.gameState);
 
-      // Perform calculation using service
+      // 1 Perform calculation using service
+      // return {
+      //   winNumber,
+      //   strategy,
+      //   totalBetAmount,
+      //   selectedOptionReturnAmount,
+      //   netProfit,
+      // };
       const calculationResult = await this.service.performRoundCalculation(
         this.currentRound
       );
 
       // Set the winning option for the round
       this.winningOption = calculationResult.winNumber;
-
-      // Broadcast calculation phase
-      greedy.emit("calculation_started", {
-        round: this.currentRound,
-        gameState: this.gameState,
-      });
+      this.lastCalculation = calculationResult;
 
       // Simulate calculation time (2 seconds)
       this.calculationTimeout = setTimeout(async () => {
         await this.generateWinningOption();
         await this.resumeCountdown();
       }, 2000);
+
     } catch (error) {
       console.error("❌ Error starting calculation:", error);
     }
@@ -219,11 +224,6 @@ class GreedyGame {
       // Store in Redis using service
       await this.service.updateRedisWinningOption(this.winningOption);
 
-      // Broadcast winning option
-      greedy.emit("winning_option_generated", {
-        round: this.currentRound,
-        winningOption: this.winningOption,
-      });
     } catch (error) {
       console.error("❌ Error generating winning option:", error);
     }
@@ -253,9 +253,8 @@ class GreedyGame {
       // Broadcast round results
       greedy.emit("round_finished", {
         round: this.currentRound,
-        winningOption: this.winningOption,
-        results: results,
-        gameState: this.gameState,
+        winners: results.winners,
+        winningOption: this.winningOption
       });
 
       console.log(`📊 Round ${this.currentRound} Results:`, results);
@@ -280,7 +279,7 @@ class GreedyGame {
       const results = this.service.calculateRoundResults(roundBets);
 
       // Process winner payments using service
-      await this.service.processWinnerPayments(results.winningBetsList);
+      const winners = await this.service.processWinnerPayments(results.winningBetsList);
 
       // Return results without the winningBetsList
       return {
@@ -289,6 +288,7 @@ class GreedyGame {
         totalBetAmount: results.totalBetAmount,
         winningBetAmount: results.winningBetAmount,
         winRate: results.winRate,
+        winners: winners
       };
     } catch (error) {
       console.error("❌ Error calculating results:", error);

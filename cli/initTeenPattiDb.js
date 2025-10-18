@@ -1,19 +1,19 @@
 /**
- * Greedy Game Database Initialization Script
+ * Teen Patti Game Database Initialization Script
  * 
- * This script initializes the greedy_rounds table with the first round
+ * This script initializes the teen_patti_rounds table with the first round
  * Run this once before starting the game for the first time
  */
 
 const { PrismaClient } = require("../generated/prisma");
 const prisma = new PrismaClient();
 
-async function initGreedyGame() {
-  console.log("🎮 Initializing Greedy Game Database...");
+async function initTeenPattiGame() {
+  console.log("🎴 Initializing Teen Patti Game Database...");
 
   try {
     // Check if there are any existing rounds
-    const existingRounds = await prisma.greedy_rounds.findMany();
+    const existingRounds = await prisma.teen_patti_rounds.findMany();
 
     if (existingRounds.length > 0) {
       console.log(`✅ Database already initialized with ${existingRounds.length} rounds`);
@@ -22,7 +22,7 @@ async function initGreedyGame() {
     }
 
     // Create the first round
-    const firstRound = await prisma.greedy_rounds.create({
+    const firstRound = await prisma.teen_patti_rounds.create({
       data: {
         round: 1,
         win_option_id: null,
@@ -32,7 +32,7 @@ async function initGreedyGame() {
     });
 
     console.log("✅ Created first round:", firstRound);
-    console.log("🎉 Greedy Game database initialized successfully!");
+    console.log("🎉 Teen Patti Game database initialized successfully!");
     console.log("💡 You can now start the game server");
 
   } catch (error) {
@@ -45,7 +45,7 @@ async function initGreedyGame() {
 
 // Run if called directly
 if (require.main === module) {
-  initGreedyGame()
+  initTeenPattiGame()
     .then(() => {
       console.log("✅ Initialization complete");
       process.exit(0);
@@ -56,15 +56,5 @@ if (require.main === module) {
     });
 }
 
-module.exports = { initGreedyGame };
-
-
-
-
-
-
-
-
-
-
+module.exports = { initTeenPattiGame };
 

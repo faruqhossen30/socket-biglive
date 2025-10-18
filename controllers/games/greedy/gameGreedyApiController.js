@@ -385,6 +385,217 @@ exports.addBetToPizza = async (req, res) => {
   }
 };
 
+
+/**
+ * Place a bet on the current greedy game round
+ * @route POST /api/greedy/add-to-bet
+ * @param {number} diamond - The amount of diamonds to bet
+ * @param {number} returnDiamond - The expected return amount (8x multiplier)
+ * @param {number} optionId - The option number (1-8) to bet on
+ */
+exports.addBetToSalad = async (req, res) => {
+  const { diamond } = req.body;
+  console.log("📥 Bet request:", req.body);
+
+  try {
+    // Validate input
+    if (!diamond) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: diamond.",
+      });
+    }
+
+    if (diamond <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Diamond amount must be greater than 0",
+      });
+    }
+
+    // Get user from database
+    const user = await prisma.users.findUnique({
+      where: { id: req.user.id },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Check countdown from Redis
+    const countdown = await redisClient.get("greedy:countdown");
+
+    if (parseInt(countdown) <= 5) {
+      return res.status(400).json({
+        success: false,
+        message: "Too late to bet.",
+        countdown: parseInt(countdown),
+      });
+    }
+
+    // Check if user has enough diamonds
+    if (user.diamond < diamond * 4) {
+      return res.status(400).json({
+        success: false,
+        message: "Not enough diamonds",
+        userDiamond: user.diamond,
+        required: diamond,
+      });
+    }
+
+    // Deduct diamonds from user
+    const userInfo = await prisma.users.update({
+      where: { id: req.user.id },
+      data: {
+        diamond: { decrement: Number(diamond * 4) },
+        updated_at: new Date(),
+      },
+      select: {
+        diamond: true,
+      },
+    });
+
+    // Get current round
+    const lastRound = await prisma.greedy_rounds.findFirst({
+      orderBy: { id: "desc" },
+    });
+
+    if (!lastRound) {
+      // Refund user if no round exists
+      await prisma.users.update({
+        where: { id: req.user.id },
+        data: {
+          diamond: { increment: Number(diamond) },
+          updated_at: new Date(),
+        },
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: "No active round found",
+      });
+    }
+
+    // Create bet
+    const bet = await prisma.greedies.createMany({
+      data: [
+        {
+          user_id: req.user.id,
+          round: lastRound.round,
+          option_id: 4,
+          diamond: Number(diamond),
+          return_diamond: Number(diamond) * 5,
+          status: GameStatusEnum.PENDING,
+          completed: false,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+        {
+          user_id: req.user.id,
+          round: lastRound.round,
+          option_id: 5,
+          diamond: Number(diamond),
+          return_diamond: Number(diamond) * 5,
+          status: GameStatusEnum.PENDING,
+          completed: false,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+        {
+          user_id: req.user.id,
+          round: lastRound.round,
+          option_id: 6,
+          diamond: Number(diamond),
+          return_diamond: Number(diamond) * 5,
+          status: GameStatusEnum.PENDING,
+          completed: false,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+        {
+          user_id: req.user.id,
+          round: lastRound.round,
+          option_id: 7,
+          diamond: Number(diamond),
+          return_diamond: Number(diamond) * 10,
+          status: GameStatusEnum.PENDING,
+          completed: false,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      ],
+    });
+
+    console.log(
+      `✅ Greedy Bet placed: User ${req.user.id} bet ${diamond} on option r round ${lastRound.round}`
+    );
+
+    // Emit bet event to all connected clients via socket
+    const { greedy } = require("../../../games/greedyGame");
+
+    greedy.emit("bet_placed", {
+      userId: req.user.id,
+      options: [
+        {
+          optionId: Number(1),
+          diamond: Number(diamond),
+        },
+        {
+          optionId: Number(2),
+          diamond: Number(diamond),
+        },
+        {
+          optionId: Number(3),
+          diamond: Number(diamond),
+        },
+        {
+          optionId: Number(8),
+          diamond: Number(diamond),
+        },
+      ],
+    });
+
+    res.json({
+      success: true,
+      message: "Bet placed successfully",
+      diamond: userInfo.diamond,
+    });
+  } catch (err) {
+    console.error("❌ Error placing bet:", err);
+
+    // Try to refund user if bet creation failed
+    try {
+      const user = await prisma.users.findUnique({
+        where: { id: req.user.id },
+      });
+      if (user && req.body.diamond) {
+        await prisma.users.update({
+          where: { id: req.user.id },
+          data: {
+            diamond: { increment: Number(req.body.diamond) },
+            updated_at: new Date(),
+          },
+        });
+        console.log(
+          `💰 Refunded ${req.body.diamond} diamonds to user ${req.user.id}`
+        );
+      }
+    } catch (refundErr) {
+      console.error("❌ Error refunding user:", refundErr);
+    }
+
+    res.status(500).json({
+      success: false,
+      message: err.message || "Failed to place bet",
+    });
+  }
+};
+
+
+
 /**
  * Get current game state
  * @route GET /api/greedy/game-state

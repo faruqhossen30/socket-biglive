@@ -430,12 +430,12 @@ model users {
   greedies                                               greedies[]
   hosts_hosts_agent_idTousers                            hosts[]                @relation("hosts_agent_idTousers")
   hosts_hosts_user_idTousers                             hosts?                 @relation("hosts_user_idTousers")
-  name_updates                                           name_updates[]
   profile_updates                                        profile_updates[]
   reseller_deposits_reseller_deposits_admin_idTousers    reseller_deposits[]    @relation("reseller_deposits_admin_idTousers")
   reseller_deposits_reseller_deposits_reseller_idTousers reseller_deposits[]    @relation("reseller_deposits_reseller_idTousers")
   rewards                                                rewards[]
   royal_packages                                         royal_packages[]
+  teen_pattis                                            teen_pattis[]
   video_live_histories                                   video_live_histories[]
   video_lives                                            video_lives?
   vvip_packages                                          vvip_packages[]
@@ -456,6 +456,7 @@ model video_lives {
   user_id      BigInt    @unique(map: "video_lives_user_id_unique")
   app_id       String    @db.VarChar(255)
   channel      String    @db.VarChar(255)
+  agent_name   String?   @db.VarChar(255)
   is_host      Boolean
   is_audience  Boolean
   request      Boolean
@@ -466,7 +467,6 @@ model video_lives {
   gift_diamond Int
   created_at   DateTime? @db.Timestamp(0)
   updated_at   DateTime? @db.Timestamp(0)
-  agent_name   String?   @db.VarChar
   users        users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "video_lives_user_id_foreign")
 }
 
@@ -498,6 +498,7 @@ model greedies {
   diamond        Int
   return_diamond Int
   status         String    @default("pending") @db.VarChar(255)
+  paid           Boolean   @default(false)
   completed      Boolean   @default(false)
   created_at     DateTime? @db.Timestamp(0)
   updated_at     DateTime? @db.Timestamp(0)
@@ -510,14 +511,6 @@ model greedy_rounds {
   win_option_id Int?
   created_at    DateTime? @db.Timestamp(0)
   updated_at    DateTime? @db.Timestamp(0)
-}
-
-model name_updates {
-  id         BigInt    @id @default(autoincrement())
-  user_id    BigInt
-  created_at DateTime? @db.Timestamp(0)
-  updated_at DateTime? @db.Timestamp(0)
-  users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "name_updates_user_id_foreign")
 }
 
 model profile_updates {
@@ -539,12 +532,15 @@ model teen_patti_rounds {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model teen_pattis {
   id             BigInt    @id @default(autoincrement())
+  user_id        BigInt
   round          Int
   option_id      Int
   diamond        Int
   return_diamond Int
   status         String    @default("pending") @db.VarChar(255)
+  paid           Boolean   @default(false)
   completed      Boolean   @default(false)
   created_at     DateTime? @db.Timestamp(0)
   updated_at     DateTime? @db.Timestamp(0)
+  users          users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "teen_pattis_user_id_foreign")
 }

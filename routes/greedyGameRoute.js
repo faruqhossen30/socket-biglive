@@ -8,14 +8,7 @@ const gameGreedyApiController = require("../controllers/games/greedy/gameGreedyA
 // Betting endpoints
 router.post("/add-to-bet", apiAuthMiddleware, gameGreedyApiController.addToBet);
 router.post("/bet-pizza", apiAuthMiddleware, gameGreedyApiController.addBetToPizza);
-
-// Game state endpoints
-router.get("/game-state", gameGreedyApiController.getGameState);
-router.get("/stats", gameGreedyApiController.getGameStats);
-
-// History endpoints
-router.get("/my-bets", apiAuthMiddleware, gameGreedyApiController.getMyBets);
-router.get("/round-history", gameGreedyApiController.getRoundHistory);
+router.post("/bet-salad", apiAuthMiddleware, gameGreedyApiController.addBetToSalad);
 
 // Test endpoint
 router.get("/test", apiAuthMiddleware, testController.onTest);

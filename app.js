@@ -9,18 +9,24 @@ require("./utils/json-bigint");
 
 const { redisClient, radisURL } = require('./config/redis');
 // Initialize Greedy Game
-// console.log('🎮 Initializing Greedy Game...');
-// const { greedyGame } = require('./games/greedyGame');
+console.log('🎮 Initializing Greedy Game...');
+const { greedyGame } = require('./games/greedyGame');
+
+// Initialize Teen Patti Game
+// console.log('🎴 Initializing Teen Patti Game...');
+const { teenPattiGame } = require('./games/teenPattiGame');
 
 // Router
 const videoLiveRoute = require("./routes/videoLiveRoute");
 const greedyGameRoute = require("./routes/greedyGameRoute");
+const teenPattiGameRoute = require("./routes/teenPattiGameRoute");
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use("/", router);
 app.use("/api/video-live", videoLiveRoute);
 app.use("/api/greedy", greedyGameRoute);
+app.use("/api/teen-patti", teenPattiGameRoute);
 
 // jwt
 router.post("/jwt", (req, res) => {
