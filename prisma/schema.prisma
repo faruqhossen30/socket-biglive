@@ -183,7 +183,9 @@ model gifts {
   diamond     Int
   commission  Int
   total       Int
+  type        String    @default("gif") @db.VarChar(255)
   img         String    @db.VarChar(255)
+  thumbnail   String?   @db.VarChar(255)
   music       String?   @db.VarChar(255)
   status      Boolean
   created_at  DateTime? @db.Timestamp(0)

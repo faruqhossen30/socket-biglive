@@ -48,6 +48,7 @@ exports.sendGift = async (req, res) => {
           id: true,
           diamond: true,
           img: true,
+          type: true,
           music: true,
           commission: true,
         },
@@ -146,6 +147,7 @@ exports.sendGift = async (req, res) => {
 
     const payload = {
       img: result.gift.img,
+      type: result.gift.type,
       music: result.gift.music,
       gift_diamond: result.host.gift_diamond,
       title: `${result.user.name} sent  ${result.gift.diamond} gift to ${result.receiver.name}`,
