@@ -118,23 +118,23 @@ hostSocket.on("connection", (socket) => {
   socket.on("disconnect", async () => {
     // if socket.isHost is true need delete host
 
-    if (socket.isHost) {
-      const deletedRecord = await prisma.video_lives.delete({
-        where: { user_id: socket.user.id },
-      });
+    // if (socket.isHost) {
+    //   const deletedRecord = await prisma.video_lives.delete({
+    //     where: { user_id: socket.user.id },
+    //   });
 
-      if (deletedRecord) {
-        const nowUtc = new Date(new Date().toUTCString());
+    //   if (deletedRecord) {
+    //     const nowUtc = new Date(new Date().toUTCString());
 
-        await prisma.video_live_histories.create({
-          data: {
-            user_id: socket.user.id,
-            start_at: deletedRecord.created_at,
-            end_at: new Date(nowUtc.getTime() + 6 * 60 * 60 * 1000),
-          },
-        });
-      }
-    }
+    //     await prisma.video_live_histories.create({
+    //       data: {
+    //         user_id: socket.user.id,
+    //         start_at: deletedRecord.created_at,
+    //         end_at: new Date(nowUtc.getTime() + 6 * 60 * 60 * 1000),
+    //       },
+    //     });
+    //   }
+    // }
 
     console.log("User disconnected:", {
       isHost: socket.isHost,
