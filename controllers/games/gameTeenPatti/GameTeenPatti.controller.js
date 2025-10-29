@@ -7,6 +7,7 @@ const teenPattiGameService = require("../../../services/game/teenPattiGameServic
 
 const { redisClient } = require("../../../config/redis");
 const { generateGameHands } = require("../../../utils/teenPattiCards");
+const {timestamp} = require("../../../utils/timestampSetting");
 
 const prisma = new PrismaClient();
 
@@ -125,7 +126,7 @@ class GameTeenPattiController {
         where: { id: req.user.id },
         data: {
           diamond: { decrement: Number(diamond) },
-          updated_at: new Date(),
+          updated_at: timestamp(),
         },
         select: {
           diamond: true,
@@ -147,8 +148,8 @@ class GameTeenPattiController {
           return_diamond,
           status: "pending",
           completed: false,
-          created_at: new Date(),
-          updated_at: new Date(),
+          created_at: timestamp(),
+          updated_at: timestamp(),
         },
       });
 

@@ -2,6 +2,10 @@ const { redisClient } = require("../../../config/redis");
 const { GameStatusEnum } = require("../../../enums/gameStatusEnum");
 const { PrismaClient } = require("../../../generated/prisma");
 const prisma = new PrismaClient();
+const nowUtc = new Date(new Date().toUTCString());
+const {timestamp} = require("../../../utils/timestampSetting");
+
+
 
 /**
  * Place a bet on the current greedy game round
@@ -103,6 +107,7 @@ exports.addToBet = async (req, res) => {
     }
 
     // Create bet
+
     const bet = await prisma.greedies.create({
       data: {
         user_id: req.user.id,
@@ -112,8 +117,8 @@ exports.addToBet = async (req, res) => {
         return_diamond: Number(returnDiamond),
         status: GameStatusEnum.PENDING,
         completed: false,
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: timestamp(),
+        updated_at: timestamp(),
       },
     });
 
@@ -281,8 +286,8 @@ exports.addBetToPizza = async (req, res) => {
           return_diamond: Number(diamond) * 15,
           status: GameStatusEnum.PENDING,
           completed: false,
-          created_at: new Date(),
-          updated_at: new Date(),
+          created_at: timestamp(),
+          updated_at: timestamp(),
         },
         {
           user_id: req.user.id,
@@ -292,8 +297,8 @@ exports.addBetToPizza = async (req, res) => {
           return_diamond: Number(diamond) * 25,
           status: GameStatusEnum.PENDING,
           completed: false,
-          created_at: new Date(),
-          updated_at: new Date(),
+          created_at: timestamp(),
+          updated_at: timestamp(),
         },
         {
           user_id: req.user.id,
@@ -303,8 +308,8 @@ exports.addBetToPizza = async (req, res) => {
           return_diamond: Number(diamond) * 45,
           status: GameStatusEnum.PENDING,
           completed: false,
-          created_at: new Date(),
-          updated_at: new Date(),
+          created_at: timestamp(),
+          updated_at: timestamp(),
         },
         {
           user_id: req.user.id,
@@ -314,8 +319,8 @@ exports.addBetToPizza = async (req, res) => {
           return_diamond: Number(diamond) * 10,
           status: GameStatusEnum.PENDING,
           completed: false,
-          created_at: new Date(),
-          updated_at: new Date(),
+          created_at: timestamp(),
+          updated_at: timestamp(),
         },
       ],
     });
@@ -384,7 +389,6 @@ exports.addBetToPizza = async (req, res) => {
     });
   }
 };
-
 
 /**
  * Place a bet on the current greedy game round
@@ -490,8 +494,8 @@ exports.addBetToSalad = async (req, res) => {
           return_diamond: Number(diamond) * 5,
           status: GameStatusEnum.PENDING,
           completed: false,
-          created_at: new Date(),
-          updated_at: new Date(),
+          created_at: timestamp(),
+          updated_at: timestamp(),
         },
         {
           user_id: req.user.id,
@@ -501,8 +505,8 @@ exports.addBetToSalad = async (req, res) => {
           return_diamond: Number(diamond) * 5,
           status: GameStatusEnum.PENDING,
           completed: false,
-          created_at: new Date(),
-          updated_at: new Date(),
+          created_at: timestamp(),
+          updated_at: timestamp(),
         },
         {
           user_id: req.user.id,
@@ -512,8 +516,8 @@ exports.addBetToSalad = async (req, res) => {
           return_diamond: Number(diamond) * 5,
           status: GameStatusEnum.PENDING,
           completed: false,
-          created_at: new Date(),
-          updated_at: new Date(),
+          created_at: timestamp(),
+          updated_at: timestamp(),
         },
         {
           user_id: req.user.id,
@@ -523,8 +527,8 @@ exports.addBetToSalad = async (req, res) => {
           return_diamond: Number(diamond) * 10,
           status: GameStatusEnum.PENDING,
           completed: false,
-          created_at: new Date(),
-          updated_at: new Date(),
+          created_at: timestamp(),
+          updated_at: timestamp(),
         },
       ],
     });
@@ -593,8 +597,6 @@ exports.addBetToSalad = async (req, res) => {
     });
   }
 };
-
-
 
 /**
  * Get current game state

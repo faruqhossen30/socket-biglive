@@ -1,6 +1,5 @@
-const { hostSocket } = require("../socket/hostSocket");
+const { hostSocket, EmitService } = require("../socket/hostSocket");
 const QueryService = require("../services/videoLive/QueryService");
-const EmitService = require("../services/videoLive/EmitService");
 
 const { PrismaClient } = require("./../generated/prisma");
 const prisma = new PrismaClient();

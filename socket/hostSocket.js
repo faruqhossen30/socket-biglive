@@ -1,17 +1,23 @@
 const jwt = require("jsonwebtoken");
 const { io } = require("../config/server");
 const { PrismaClient } = require("./../generated/prisma");
+const EmitServiceClass = require("../services/videoLive/EmitService");
+const AudienceEmitServiceClass = require("../services/videoLive/AudienceEmitService");
 const prisma = new PrismaClient();
 
 // Use a more flexible namespace that doesn't depend on hardcoded IP
 const NAMESPACE = "/video-live";
 const hostSocket = io.of(NAMESPACE);
 
+// Create EmitService and AudienceEmitService instances with hostSocket
+const EmitService = new EmitServiceClass(hostSocket);
+const AudienceEmitService = new AudienceEmitServiceClass(hostSocket);
+
 console.log(`Setting up socket namespace: ${NAMESPACE}`);
 
 // Socket.io auth middleware to prevent server crash on invalid/expired token
 hostSocket.use((socket, next) => {
-  try {    
+  try {
     const token = socket.handshake.query && socket.handshake.query.jwt;
     if (!token) {
       console.log("No JWT token provided for socket:", socket.id);
@@ -50,7 +56,7 @@ hostSocket.on("connection", (socket) => {
 
   // Join room using roomId as room name
   socket.join(roomId);
-  
+
   // Send chat event after initial connection to room
   const connectionPayload = {
     id: socket.user && socket.user.id,
@@ -58,13 +64,15 @@ hostSocket.on("connection", (socket) => {
     transaction: socket.user && socket.user.transaction,
     vvip: false,
     royal: false,
-    text: `${socket.user && socket.user.name || 'User'} connected to the room`,
-    isJoinMessage: true
+    text: `${
+      (socket.user && socket.user.name) || "User"
+    } connected to the room`,
+    isJoinMessage: true,
   };
-  
-  console.log('Auto chat emit after initial connection to roomid = ', roomId);
+
+  console.log("Auto chat emit after initial connection to roomid = ", roomId);
   hostSocket.to(roomId).emit("chat", connectionPayload);
-  
+
   // Start socket event
 
   // Add chat event handler with more detailed logging
@@ -78,11 +86,11 @@ hostSocket.on("connection", (socket) => {
       royal: data.royal,
       text: data.text,
     };
-    
+
     // Use the room specified in data, or fallback to the original roomId
     const targetRoom = data.roomId || roomId;
-    console.log('chat emit to roomid = ', targetRoom);
-    
+    console.log("chat emit to roomid = ", targetRoom);
+
     hostSocket.to(targetRoom).emit("chat", payLoad);
   });
 
@@ -99,7 +107,7 @@ hostSocket.on("connection", (socket) => {
     const roomName = String(room);
     socket.join(roomName);
     console.log(`${socket.id} join room: ${room}`);
-    
+
     // Send chat event after joining room
     const joinPayload = {
       id: socket.user && socket.user.id,
@@ -107,16 +115,71 @@ hostSocket.on("connection", (socket) => {
       transaction: socket.user && socket.user.transaction,
       vvip: false,
       royal: false,
-      text: `${socket.user && socket.user.name || 'User'} joined the room`,
-      isJoinMessage: true
+      text: `${(socket.user && socket.user.name) || "User"} joined the room`,
+      isJoinMessage: true,
     };
-    
-    console.log('Auto chat emit after join to roomid = ', roomName);
+
+    console.log("Auto chat emit after join to roomid = ", roomName);
     hostSocket.to(roomName).emit("chat", joinPayload);
   });
 
-  socket.on("disconnect", async () => {
+  // User scroll for leave
+  // socket.to(roomName).emit("liveClosed", true);
+
+  // User scroll for leave
+  socket.on("appPasse", async (data) => {
+    const deletedRecord = await prisma.video_lives.delete({
+        where: { user_id: socket.user.id },
+      });
+
+      if (deletedRecord) {
+        const nowUtc = new Date(new Date().toUTCString());
+        await prisma.video_live_histories.create({
+          data: {
+            user_id: socket.user.id,
+            start_at: deletedRecord.created_at,
+            end_at: new Date(nowUtc.getTime() + 6 * 60 * 60 * 1000),
+          },
+        });
+        await prisma.video_lives.deleteMany({
+          where: {
+            channel: String(socket.user.id),
+            is_host: false,
+          },
+        });
+        await EmitService.liveClosed(String(socket.user.id));
+      }
+  });
+
+  socket.on("disconnect", async (reason) => {
     // if socket.isHost is true need delete host
+
+    if (
+      socket.isHost &&
+      (reason === "transport close" || reason === "ping timeout")
+    ) {
+      const deletedRecord = await prisma.video_lives.delete({
+        where: { user_id: socket.user.id },
+      });
+
+      if (deletedRecord) {
+        const nowUtc = new Date(new Date().toUTCString());
+        await prisma.video_live_histories.create({
+          data: {
+            user_id: socket.user.id,
+            start_at: deletedRecord.created_at,
+            end_at: new Date(nowUtc.getTime() + 6 * 60 * 60 * 1000),
+          },
+        });
+        await prisma.video_lives.deleteMany({
+          where: {
+            channel: String(socket.user.id),
+            is_host: false,
+          },
+        });
+        await EmitService.liveClosed(String(socket.user.id));
+      }
+    }
 
     // if (socket.isHost) {
     //   const deletedRecord = await prisma.video_lives.delete({
@@ -140,8 +203,9 @@ hostSocket.on("connection", (socket) => {
       isHost: socket.isHost,
       user: socket.user,
       roomId: roomId,
+      reason: reason,
     });
   });
 });
 
-module.exports = { hostSocket };
+module.exports = { hostSocket, EmitService, AudienceEmitService };

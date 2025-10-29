@@ -1,6 +1,5 @@
-const { hostSocket } = require("../socket/hostSocket");
+const { hostSocket, EmitService } = require("../socket/hostSocket");
 const QueryService = require("../services/videoLive/QueryService");
-const EmitService = require("../services/videoLive/EmitService");
 
 const { PrismaClient } = require("./../generated/prisma");
 const prisma = new PrismaClient();
@@ -435,34 +434,8 @@ exports.hostDelete = async (req, res) => {
   try {
     const deletedRecord = await prisma.video_lives.delete({
       where: { user_id: req.user.id },
-      // select: {
-      //   id: true,
-      //   channel: true,
-      //   is_host: true,
-      //   camera: true,
-      //   microphone: true,
-      //   speaker: true,
-      //   join: true,
-      //   gift_diamond: true,
-      //   users: {
-      //     select: {
-      //       id: true,
-      //       name: true,
-      //       photo_url: true,
-      //     },
-      //   },
-      // },
     });
-
     if (deletedRecord) {
-      // await AudienceEmitService.audienceDeleted(
-      //   deletedRecord.channel,
-      //   deletedRecord.users
-      // );
-      // if (deletedRecord.join) {
-      //   await EmitService.sendBroadcastAudienceList(deletedRecord.channel);
-      //   await EmitService.broadcastRemoved(deletedRecord.channel, deletedRecord);
-      // }
       const nowUtc = new Date(new Date().toUTCString());
 
       await prisma.video_live_histories.create({
@@ -472,7 +445,17 @@ exports.hostDelete = async (req, res) => {
           end_at: new Date(nowUtc.getTime() + 6 * 60 * 60 * 1000),
         },
       });
-    }
+      console.log('host delete');
+      
+      await EmitService.liveClosed(String(req.user.id));
+      await prisma.video_lives.deleteMany({
+        where: {
+          channel: String(req.user.id),
+          is_host: false,
+        },
+      });
+
+    }    
 
     return res.json({
       message: "Record deleted successfully",
@@ -480,7 +463,7 @@ exports.hostDelete = async (req, res) => {
     });
   } catch (err) {
     // Handle Prisma error when record not found
-    // console.log(err);
+    console.log(err);
 
     if (err.code === "P2025") {
       return res.status(404).json({ message: "Record not found" });
