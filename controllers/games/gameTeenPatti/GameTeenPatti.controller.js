@@ -156,6 +156,7 @@ class GameTeenPattiController {
       const payload = {
         user_id: req.user.id,
         option_id,
+        bet_diamond: diamond,
         diamond: userInfo.diamond,
       };
 

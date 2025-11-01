@@ -8,8 +8,11 @@ const pool = require("../config/db");
 const videoLiveAudienceController = require("../controllers/vidoeLiveAudienceController");
 const videoLiveHostController = require("../controllers/videoLiveHostController");
 const videoLiveController = require("../controllers/videoLiveController");
+const adminController = require("../controllers/adminController");
 
 // Video Live
+router.post("/admin/:channel/delete-live",apiAuthMiddleware,adminController.deleteLive);
+
 router.post("/send-gift",apiAuthMiddleware,videoLiveController.sendGift);
 router.get('/:channel/broadcast-audience-list', apiAuthMiddleware, videoLiveController.broadcastAudienceList)
 
