@@ -22,6 +22,7 @@ exports.acceptJoinRequest = async (req, res) => {
         channel: true,
         is_host: true,
         join: true,
+        broadcaster: true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -34,7 +35,7 @@ exports.acceptJoinRequest = async (req, res) => {
             transaction: true,
             is_vvip: true,
             is_royal: true,
-            avatar_frame: true
+            avatar_frame: true,
           },
         },
       },
@@ -96,6 +97,8 @@ exports.removeFromJoined = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+        join: true,
+        broadcaster: true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -108,7 +111,7 @@ exports.removeFromJoined = async (req, res) => {
             transaction: true,
             is_vvip: true,
             is_royal: true,
-            avatar_frame: true
+            avatar_frame: true,
           },
         },
       },
@@ -130,7 +133,7 @@ exports.kickFromLive = async (req, res) => {
   const { id } = req.params;
   try {
     const deletedRecord = await prisma.video_lives.delete({
-      where: { user_id: id, channel: req.user.id.toString()},
+      where: { user_id: id, channel: req.user.id.toString() },
       include: {
         users: {
           select: {
@@ -140,7 +143,7 @@ exports.kickFromLive = async (req, res) => {
             transaction: true,
             is_vvip: true,
             is_royal: true,
-            avatar_frame: true
+            avatar_frame: true,
           },
         },
       },
@@ -169,7 +172,7 @@ exports.kickFromLive = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    
+
     res.status(400).json({ status: "error", message: error.message });
   }
 };
@@ -188,6 +191,8 @@ exports.cameraOn = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+        join: true,
+        broadcaster: true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -200,7 +205,7 @@ exports.cameraOn = async (req, res) => {
             transaction: true,
             is_vvip: true,
             is_royal: true,
-            avatar_frame: true
+            avatar_frame: true,
           },
         },
       },
@@ -231,6 +236,8 @@ exports.cameraOff = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+        join: true,
+        broadcaster: true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -243,7 +250,7 @@ exports.cameraOff = async (req, res) => {
             transaction: true,
             is_vvip: true,
             is_royal: true,
-            avatar_frame: true
+            avatar_frame: true,
           },
         },
       },
@@ -274,6 +281,8 @@ exports.microphoneOn = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+        join: true,
+        broadcaster: true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -286,7 +295,7 @@ exports.microphoneOn = async (req, res) => {
             transaction: true,
             is_vvip: true,
             is_royal: true,
-            avatar_frame: true
+            avatar_frame: true,
           },
         },
       },
@@ -317,6 +326,8 @@ exports.microphoneOff = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+        join: true,
+        broadcaster: true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -329,7 +340,7 @@ exports.microphoneOff = async (req, res) => {
             transaction: true,
             is_vvip: true,
             is_royal: true,
-            avatar_frame: true
+            avatar_frame: true,
           },
         },
       },
@@ -360,6 +371,8 @@ exports.speakerOn = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+        join: true,
+        broadcaster: true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -372,7 +385,7 @@ exports.speakerOn = async (req, res) => {
             transaction: true,
             is_vvip: true,
             is_royal: true,
-            avatar_frame: true
+            avatar_frame: true,
           },
         },
       },
@@ -402,6 +415,8 @@ exports.speakerOff = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+        join: true,
+        broadcaster: true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -414,7 +429,7 @@ exports.speakerOff = async (req, res) => {
             transaction: true,
             is_vvip: true,
             is_royal: true,
-            avatar_frame: true
+            avatar_frame: true,
           },
         },
       },
@@ -445,8 +460,8 @@ exports.hostDelete = async (req, res) => {
           end_at: new Date(nowUtc.getTime() + 6 * 60 * 60 * 1000),
         },
       });
-      console.log('host delete');
-      
+      console.log("host delete");
+
       await EmitService.liveClosed(String(req.user.id));
       await prisma.video_lives.deleteMany({
         where: {
@@ -454,8 +469,7 @@ exports.hostDelete = async (req, res) => {
           is_host: false,
         },
       });
-
-    }    
+    }
 
     return res.json({
       message: "Record deleted successfully",

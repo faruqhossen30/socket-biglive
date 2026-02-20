@@ -141,6 +141,8 @@ exports.cameraOn = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+                join:true,
+        broadcaster:true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -184,6 +186,8 @@ exports.cameraOff = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+                join:true,
+        broadcaster:true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -229,6 +233,8 @@ exports.microphoneOn = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+                join:true,
+        broadcaster:true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -274,6 +280,8 @@ exports.microphoneOff = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+                join:true,
+        broadcaster:true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -317,6 +325,8 @@ exports.speakerOn = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+                join:true,
+        broadcaster:true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -359,6 +369,8 @@ exports.speakerOff = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+        join:true,
+        broadcaster:true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -419,6 +431,7 @@ exports.leaveFromJoined = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+        broadcaster: true,
         camera: true,
         microphone: true,
         speaker: true,
@@ -453,6 +466,71 @@ exports.leaveFromJoined = async (req, res) => {
   }
 };
 
+exports.broadcastUpdate = async (req, res) => {
+  const { channel } = req.params;
+  try {
+    const checkJoin = await prisma.video_lives.findUnique({
+      where: {
+        channel: channel,
+        user_id: req.user.id,
+        is_host: false,
+        join: true,
+      },
+    });
+
+    if (!checkJoin) {
+      return res
+        .status(422)
+        .json({ status: "error", message: "You are not joined" });
+    }
+
+    const record = await prisma.video_lives.update({
+      where: {
+        channel: channel,
+        user_id: req.user.id,
+        is_host: false,
+        join: true,
+      },
+      data: {
+        broadcaster: true,
+      },
+      select: {
+        id: true,
+        channel: true,
+        broadcaster: true,
+        is_host: true,
+        camera: true,
+        microphone: true,
+        speaker: true,
+        gift_diamond: true,
+        users: {
+          select: {
+            id: true,
+            name: true,
+            photo_url: true,
+            transaction: true,
+            is_vip: true,
+          },
+        },
+      },
+    });
+    console.log("i remove from joined", record);
+
+    if (record) {
+      await EmitService.broadcastUpdated(record.channel, record);
+    }
+
+    res.json({ status: "ok", message: "Leave from joined" });
+  } catch (error) {
+    if (error.code === "P2025") {
+      return res
+        .status(404)
+        .json({ status: "error", message: "Record not found" });
+    }
+    res.status(400).json({ status: "error", message: error.message });
+  }
+};
+
 exports.delete = async (req, res) => {
   try {
     const deletedRecord = await prisma.video_lives.delete({
@@ -461,6 +539,8 @@ exports.delete = async (req, res) => {
         id: true,
         channel: true,
         is_host: true,
+        join: true,
+        broadcaster: true,
         camera: true,
         microphone: true,
         speaker: true,

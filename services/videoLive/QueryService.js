@@ -25,6 +25,8 @@ class QueryService {
         id: true,
         channel: true,
         is_host: true,
+        join: true,
+        broadcaster: true,
         camera: true,
         microphone: true,
         speaker: true,

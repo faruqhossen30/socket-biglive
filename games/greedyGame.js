@@ -4,7 +4,7 @@ const { redisClient } = require("../config/redis");
 const greedyGameService = require("../services/game/greedyGameService");
 
 // Game constants
-const COUNTDOWN_TIME = 15;
+const COUNTDOWN_TIME = 25;
 const OPTIONS_COUNT = 8;
 const CALCULATION_TIME = 5;
 
@@ -202,7 +202,7 @@ class GreedyGame {
       this.calculationTimeout = setTimeout(async () => {
         await this.generateWinningOption();
         await this.resumeCountdown();
-      }, 2000);
+      }, 1000);
 
     } catch (error) {
       console.error("❌ Error starting calculation:", error);

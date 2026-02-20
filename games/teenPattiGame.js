@@ -5,7 +5,7 @@ const teenPattiGameService = require("../services/game/teenPattiGameService");
 const { generateGameHands } = require("../utils/teenPattiCards");
 
 // Game constants
-const COUNTDOWN_TIME = 15;
+const COUNTDOWN_TIME = 25;
 const OPTIONS_COUNT = 3; // Teen Patti has 3 betting options
 const CALCULATION_TIME = 5;
 
@@ -209,7 +209,7 @@ class TeenPattiGame {
       this.calculationTimeout = setTimeout(async () => {
         await this.generateWinningOption();
         await this.resumeCountdown();
-      }, 2000);
+      }, 1000);
     } catch (error) {
       console.error("❌ Error starting calculation:", error);
     }
@@ -315,7 +315,7 @@ class TeenPattiGame {
       // Wait 3 seconds before starting next round
       setTimeout(() => {
         this.startNewRound();
-      }, 8000);
+      }, 6000);
     } catch (error) {
       console.error("❌ Error finishing round:", error);
     }
