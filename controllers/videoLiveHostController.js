@@ -16,6 +16,8 @@ exports.acceptJoinRequest = async (req, res) => {
       data: {
         request: false,
         join: true,
+        camera:true,
+        broadcaster:true
       },
       select: {
         id: true,

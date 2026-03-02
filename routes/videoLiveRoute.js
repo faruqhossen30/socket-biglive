@@ -14,6 +14,7 @@ const adminController = require("../controllers/adminController");
 router.post("/admin/:channel/delete-live",apiAuthMiddleware,adminController.deleteLive);
 
 router.post("/send-gift",apiAuthMiddleware,videoLiveController.sendGift);
+router.post("/send-gift-all",apiAuthMiddleware,videoLiveController.sendGiftAll);
 router.get('/:channel/broadcast-audience-list', apiAuthMiddleware, videoLiveController.broadcastAudienceList)
 
 // Audience

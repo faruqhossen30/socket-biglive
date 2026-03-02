@@ -426,6 +426,7 @@ exports.leaveFromJoined = async (req, res) => {
         camera: false,
         request: false,
         join: false,
+        broadcaster:false
       },
       select: {
         id: true,
