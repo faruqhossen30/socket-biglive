@@ -174,24 +174,28 @@ model gift_transactions {
   commission                                 Int
   created_at                                 DateTime? @db.Timestamp(0)
   updated_at                                 DateTime? @db.Timestamp(0)
+  agent_commission                           Int       @default(0)
+  company_commission                         Int       @default(0)
   users_gift_transactions_receiver_idTousers users     @relation("gift_transactions_receiver_idTousers", fields: [receiver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "gift_transactions_receiver_id_foreign")
   users_gift_transactions_sender_idTousers   users     @relation("gift_transactions_sender_idTousers", fields: [sender_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "gift_transactions_sender_id_foreign")
 }
 
 model gifts {
-  id          BigInt    @id @default(autoincrement())
-  category_id BigInt?
-  name        String?   @db.VarChar(255)
-  diamond     Int
-  commission  Int
-  total       Int
-  type        String    @default("gif") @db.VarChar(255)
-  img         String    @db.VarChar(255)
-  thumbnail   String?   @db.VarChar(255)
-  music       String?   @db.VarChar(255)
-  status      Boolean
-  created_at  DateTime? @db.Timestamp(0)
-  updated_at  DateTime? @db.Timestamp(0)
+  id                 BigInt    @id @default(autoincrement())
+  category_id        BigInt?
+  name               String?   @db.VarChar(255)
+  diamond            Int
+  commission         Int
+  total              Int
+  type               String    @default("gif") @db.VarChar(255)
+  img                String    @db.VarChar(255)
+  thumbnail          String?   @db.VarChar(255)
+  music              String?   @db.VarChar(255)
+  status             Boolean
+  created_at         DateTime? @db.Timestamp(0)
+  updated_at         DateTime? @db.Timestamp(0)
+  agent_commission   Int       @default(0)
+  company_commission Int       @default(0)
 }
 
 model hosts {
@@ -439,10 +443,12 @@ model users {
   reseller_deposits_reseller_deposits_reseller_idTousers reseller_deposits[]    @relation("reseller_deposits_reseller_idTousers")
   rewards                                                rewards[]
   royal_packages                                         royal_packages[]
+  salaries                                               salaries[]
   teen_pattis                                            teen_pattis[]
   video_live_histories                                   video_live_histories[]
   video_lives                                            video_lives?
   vvip_packages                                          vvip_packages[]
+  withdraws                                              withdraws[]
 }
 
 model video_live_histories {
@@ -559,4 +565,40 @@ model app_versions {
   update         Boolean   @default(false)
   created_at     DateTime? @db.Timestamp(0)
   updated_at     DateTime? @db.Timestamp(0)
+}
+
+model salaries {
+  id         BigInt    @id @default(autoincrement())
+  user_id    BigInt
+  start_day  DateTime  @db.Timestamp(0)
+  end_day    DateTime  @db.Timestamp(0)
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "salaries_user_id_foreign")
+}
+
+model site_settings {
+  id               BigInt    @id @default(autoincrement())
+  withdraw_on      Boolean   @default(true)
+  diamond_rate     Int       @default(900)
+  minimum_withdraw Int       @default(1000)
+  maximum_withdraw Int       @default(100000000)
+  created_at       DateTime? @db.Timestamp(0)
+  updated_at       DateTime? @db.Timestamp(0)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model withdraws {
+  id             BigInt    @id @default(autoincrement())
+  user_id        BigInt
+  admin_id       BigInt?
+  diamond_rate   Int
+  diamond_amount Int
+  diamond_price  Int
+  account_type   String    @db.VarChar(255)
+  account_number String    @db.VarChar(255)
+  status         String    @default("pending") @db.VarChar(255)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+  users          users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "withdraws_user_id_foreign")
 }

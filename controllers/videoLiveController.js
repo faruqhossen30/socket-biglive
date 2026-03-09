@@ -39,7 +39,16 @@ exports.sendGift = async (req, res) => {
       }),
       prisma.users.findUnique({
         where: { id: parseInt(receiverId) },
-        select: { id: true, name: true, status: true },
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          hosts_hosts_user_idTousers: {
+            select: {
+              agent_id: true,
+            },
+          },
+        },
       }),
       prisma.gifts.findUnique({
         where: { id: parseInt(giftId) },
@@ -50,6 +59,8 @@ exports.sendGift = async (req, res) => {
           type: true,
           music: true,
           commission: true,
+          agent_commission: true,
+          company_commission: true,
         },
       }),
     ]);
@@ -100,6 +111,8 @@ exports.sendGift = async (req, res) => {
 
     // Use a single transaction for all database operations
     const result = await prisma.$transaction(async (tx) => {
+      const agentId = receiver.hosts_hosts_user_idTousers?.agent_id;
+
       // Update sender and receiver diamonds, and create transaction record
       const [updatedSender, updatedReceiver, host, giftTransaction] =
         await Promise.all([
@@ -110,7 +123,14 @@ exports.sendGift = async (req, res) => {
           }),
           tx.users.update({
             where: { id: parseInt(receiverId) },
-            data: { diamond: { increment: gift.diamond - gift.commission } },
+            data: {
+              diamond: {
+                increment: agentId
+                  ? gift.diamond -
+                    (gift.agent_commission + gift.company_commission)
+                  : gift.diamond - gift.company_commission,
+              },
+            },
             select: { id: true, name: true, diamond: true },
           }),
           tx.video_lives.update({
@@ -128,11 +148,21 @@ exports.sendGift = async (req, res) => {
               receiver_id: parseInt(receiverId),
               diamond: gift.diamond,
               commission: gift.commission,
+              agent_commission: agentId ? gift.agent_commission : 0,
+              company_commission: gift.company_commission,
               created_at: new Date(),
               updated_at: new Date(),
             },
           }),
         ]);
+
+      // If receiver has an agent, update agent's diamonds
+      if (agentId) {
+        await tx.users.update({
+          where: { id: agentId },
+          data: { diamond: { increment: gift.agent_commission } },
+        });
+      }
 
       return {
         user: updatedSender,
@@ -211,6 +241,8 @@ exports.sendGiftAll = async (req, res) => {
           type: true,
           music: true,
           commission: true,
+          agent_commission: true,
+          company_commission: true,
         },
       }),
     ]);
@@ -255,7 +287,12 @@ exports.sendGiftAll = async (req, res) => {
           user_id: true,
           is_host: true,
           users: {
-            select: { name: true },
+            select: {
+              name: true,
+              hosts_hosts_user_idTousers: {
+                select: { agent_id: true },
+              },
+            },
           },
         },
       });
@@ -292,10 +329,21 @@ exports.sendGiftAll = async (req, res) => {
       });
 
       // 2. Update each receiver's diamonds in users table
-      await tx.users.updateMany({
-        where: { id: { in: receiverIds } },
-        data: { diamond: { increment: gift.diamond - gift.commission } },
-      });
+      for (const receiverRecord of liveReceivers) {
+        const agentId =
+          receiverRecord.users.hosts_hosts_user_idTousers?.agent_id;
+        await tx.users.update({
+          where: { id: receiverRecord.user_id },
+          data: {
+            diamond: {
+              increment: agentId
+                ? gift.diamond -
+                  (gift.agent_commission + gift.company_commission)
+                : gift.diamond - gift.company_commission,
+            },
+          },
+        });
+      }
 
       // 3. Update each receiver's gift_diamond in video_lives table
       await tx.video_lives.updateMany({
@@ -308,17 +356,33 @@ exports.sendGiftAll = async (req, res) => {
 
       // 4. Create gift transaction records for all receivers
       await tx.gift_transactions.createMany({
-        data: receiverIds.map((id) => ({
+        data: liveReceivers.map((r) => ({
           sender_id: req.user.id,
-          receiver_id: id,
+          receiver_id: r.user_id,
           diamond: gift.diamond,
           commission: gift.commission,
+          agent_commission: r.users.hosts_hosts_user_idTousers?.agent_id
+            ? gift.agent_commission
+            : 0,
+          company_commission: gift.company_commission,
           created_at: new Date(),
           updated_at: new Date(),
         })),
       });
 
-      // 5. Fetch host record for payload
+      // 5. Update agent's diamonds for each receiver if they have one
+      for (const receiverRecord of liveReceivers) {
+        const agentId =
+          receiverRecord.users.hosts_hosts_user_idTousers?.agent_id;
+        if (agentId) {
+          await tx.users.update({
+            where: { id: agentId },
+            data: { diamond: { increment: gift.agent_commission } },
+          });
+        }
+      }
+
+      // 6. Fetch host record for payload
       const hostRecord = await tx.video_lives.findFirst({
         where: { channel: receiverId.toString(), is_host: true },
         select: { gift_diamond: true },
