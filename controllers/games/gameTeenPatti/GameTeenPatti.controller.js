@@ -119,6 +119,11 @@ class GameTeenPattiController {
           throw new Error("Not enough diamonds");
         }
 
+        // Check if user has enough diamonds
+        if (user.lock_diamond) {
+          throw new Error("Your diamond is locked.");
+        }
+
         // Get current round
         const lastRound = await tx.teen_patti_rounds.findFirst({
           orderBy: { id: "desc" },

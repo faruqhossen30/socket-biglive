@@ -88,6 +88,12 @@ exports.addToBet = async (req, res) => {
       if (user.diamond < Number(diamond)) {
         throw new Error("Not enough diamonds");
       }
+      
+      // Check if user has enough diamonds
+      if (user.lock_diamond) {
+        throw new Error("Your diamond is locked.");
+      }
+      
 
       const updatedUser = await tx.users.update({
         where: { id: req.user.id },
@@ -215,6 +221,11 @@ exports.addBetToPizza = async (req, res) => {
       // Ensure balance
       if (user.diamond < Number(diamond) * 4) {
         throw new Error("Not enough diamonds");
+      }
+      
+      // Check if user has enough diamonds
+      if (user.lock_diamond) {
+        throw new Error("Your diamond is locked.");
       }
 
       // Get current round
@@ -395,6 +406,11 @@ exports.addBetToSalad = async (req, res) => {
       // Ensure balance
       if (user.diamond < Number(diamond) * 4) {
         throw new Error("Not enough diamonds");
+      }
+      
+      // Check if user has enough diamonds
+      if (user.lock_diamond) {
+        throw new Error("Your diamond is locked.");
       }
 
       // Get current round
