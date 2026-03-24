@@ -243,20 +243,23 @@ class GreedyGameService {
     return optionReturnAmounts;
   }
 
-  calculateHistoricalProfitAndCost(allBets) {
-    // Profit: all bets where status="loss" - we keep these amounts
-    const profit = allBets
-      .filter((bet) => bet.status === GameStatusEnum.LOSS)
-      .reduce((sum, bet) => sum + bet.diamond, 0);
+  calculateHistoricalProfitAndCost(allBets, currentRoundBetAmount = 0) {
+    // Total Revenue: sum of all past bets + current round bets
+    const historicalRevenue = allBets.reduce((sum, bet) => sum + bet.diamond, 0);
+    const totalRevenue = historicalRevenue + currentRoundBetAmount;
 
-    // Cost: all bets where status="win" - we pay these return amounts
+    // Cost: all past bets where status="win"
     const cost = allBets
       .filter((bet) => bet.status === GameStatusEnum.WIN)
       .reduce((sum, bet) => sum + bet.return_diamond, 0);
 
-    const netProfit = profit - cost - profit * 0.3; // 30% deduction
+    // The company MUST keep 30% profit from total revenue
+    const targetProfit = totalRevenue * 0.15;
 
-    return { profit, cost, netProfit };
+    // Remaining balance available to pay out as winnings
+    const netProfit = totalRevenue - cost - targetProfit;
+
+    return { profit: totalRevenue, cost, netProfit };
   }
 
   /**
@@ -502,10 +505,10 @@ class GreedyGameService {
 
       // Calculate historical profit and cost
       const { profit, cost, netProfit } =
-        this.calculateHistoricalProfitAndCost(allBets);
+        this.calculateHistoricalProfitAndCost(allBets, totalBetAmount);
 
       console.log(
-        `💰 Historical - Profit (loss): ${profit}, Cost (win): ${cost}, Net Profit: ${netProfit}`
+        `💰 Financials - Total Revenue: ${profit}, Total Cost Paid: ${cost}, Available Pool: ${netProfit}`
       );
       console.log(`💰 Current Round - Total Bet Amount: ${totalBetAmount}`);
 
