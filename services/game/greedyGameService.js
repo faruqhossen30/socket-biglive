@@ -253,11 +253,11 @@ class GreedyGameService {
       .filter((bet) => bet.status === GameStatusEnum.WIN)
       .reduce((sum, bet) => sum + bet.return_diamond, 0);
 
-    // The company MUST keep 30% profit from total revenue
+    // The company MUST keep 15% profit from total revenue
     const targetProfit = totalRevenue * 0.15;
 
-    // Remaining balance available to pay out as winnings
-    const netProfit = totalRevenue - cost - targetProfit;
+    // Remaining balance available to pay out as winnings (cannot be negative)
+    const netProfit = Math.max(0, totalRevenue - cost - targetProfit);
 
     return { profit: totalRevenue, cost, netProfit };
   }

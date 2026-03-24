@@ -246,8 +246,8 @@ class TeenPattiGameService {
     // The company MUST keep 30% profit from total revenue
     const targetProfit = totalRevenue * 0.3;
 
-    // Remaining balance available to pay out as winnings
-    const netProfit = totalRevenue - cost - targetProfit;
+    // Remaining balance available to pay out as winnings (cannot be negative)
+    const netProfit = Math.max(0, totalRevenue - cost - targetProfit);
 
     return { profit: totalRevenue, cost, netProfit };
   }
@@ -289,10 +289,16 @@ class TeenPattiGameService {
     console.log(`🎯 Non-zero AND payable options:`, nonZeroPayableOptions);
 
     if (payableOptions.length === 0) {
-      // If no options are payable, select randomly from all options (fallback)
-      winNumber = Math.floor(Math.random() * OPTIONS_COUNT) + 1;
-      strategy = "fallback_random";
-      console.log(`❌ No payable options found. Using fallback random selection: ${winNumber}`);
+      // If no options are payable (all cost more than available pool)
+      // We must pick the option that costs the least to limit losses
+      const minReturnAmount = Math.min(...Object.values(optionReturnAmounts));
+      const minReturnOptions = Object.entries(optionReturnAmounts)
+        .filter(([, amount]) => amount === minReturnAmount)
+        .map(([option]) => parseInt(option));
+      
+      winNumber = minReturnOptions[Math.floor(Math.random() * minReturnOptions.length)];
+      strategy = "minimum_return_fallback";
+      console.log(`❌ No affordable options found. Using minimum return fallback: ${winNumber}`);
     } else if (nonZeroPayableOptions.length === 0 && nonZeroOptions.length === 0) {
       // If all 3 options have return amount = 0 AND are payable, select random from all 3
       winNumber = Math.floor(Math.random() * OPTIONS_COUNT) + 1;
@@ -311,10 +317,14 @@ class TeenPattiGameService {
         strategy = "random_zero_payable";
         console.log(`🎲 No non-zero payable options. Selecting from zero return options that are payable: ${zeroPayableOptions}, selected: ${winNumber}`);
       } else {
-        // Last resort fallback
-        winNumber = Math.floor(Math.random() * OPTIONS_COUNT) + 1;
-        strategy = "fallback_random";
-        console.log(`❌ No payable options found. Using fallback random selection: ${winNumber}`);
+        // Last resort fallback: pick minimum
+        const minReturnAmount = Math.min(...Object.values(optionReturnAmounts));
+        const minReturnOptions = Object.entries(optionReturnAmounts)
+          .filter(([, amount]) => amount === minReturnAmount)
+          .map(([option]) => parseInt(option));
+        winNumber = minReturnOptions[Math.floor(Math.random() * minReturnOptions.length)];
+        strategy = "minimum_return_fallback";
+        console.log(`❌ No payable options found. Using minimum return fallback: ${winNumber}`);
       }
     }
 
